@@ -23,6 +23,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "django_celery_beat",
+    "apps.core",
     "apps.employees",
     "apps.attendance",
     "apps.reports",
@@ -119,3 +120,5 @@ REST_FRAMEWORK = {
         "rest_framework.filters.OrderingFilter",
     ],
 }
+
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"

@@ -6,7 +6,7 @@ from django.db.models import Q
 
 from apps.attendance.models import AttendanceLog
 from .serializers import AttendanceLogSerializer
-from apps.core.permissions import IsDeptManagerReadOnly, IsAuditorOrReadOnly
+from apps.core.permissions import IsDeptManagerReadOnly, IsAuditorOrReadOnly, get_user_scoped_department_id
 
 
 class AttendanceLogViewSet(viewsets.ReadOnlyModelViewSet):
@@ -31,6 +31,13 @@ class AttendanceLogViewSet(viewsets.ReadOnlyModelViewSet):
 
         if employee_id:
             qs = qs.filter(employee__employee_id=employee_id)
+        dept = self.request.query_params.get("department")
+        if not dept:
+            scoped = get_user_scoped_department_id(self.request.user)
+            if scoped:
+                dept = str(scoped)
+        if dept:
+            qs = qs.filter(employee__department_id=dept)
         if log_type in ("IN", "OUT"):
             qs = qs.filter(log_type=log_type)
         if start:

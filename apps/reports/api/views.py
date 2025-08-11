@@ -13,7 +13,7 @@ from django.http import HttpResponse
 
 from apps.attendance.models import AttendanceLog
 from apps.employees.models import Employee
-from apps.core.permissions import IsDeptManagerReadOnly, IsAuditorOrReadOnly
+from apps.core.permissions import IsDeptManagerReadOnly, IsAuditorOrReadOnly, get_user_scoped_department_id
 from .serializers import (
     MonthlyReportResponseSerializer,
     WorkHoursReportResponseSerializer,
@@ -25,6 +25,10 @@ class MonthlyReportView(APIView):
 
     def get(self, request, *args, **kwargs):
         department_id = request.query_params.get("department")
+        if not department_id:
+            scoped = get_user_scoped_department_id(request.user)
+            if scoped:
+                department_id = str(scoped)
         start_param = request.query_params.get("start")
         end_param = request.query_params.get("end")
         export = request.query_params.get("export")  # 'csv' optional
@@ -162,6 +166,10 @@ class WorkHoursMonthlyReportView(APIView):
 
     def get(self, request, *args, **kwargs):
         department_id = request.query_params.get("department")
+        if not department_id:
+            scoped = get_user_scoped_department_id(request.user)
+            if scoped:
+                department_id = str(scoped)
         start_param = request.query_params.get("start")
         end_param = request.query_params.get("end")
         if not start_param or not end_param:
