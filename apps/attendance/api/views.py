@@ -6,12 +6,13 @@ from django.db.models import Q
 
 from apps.attendance.models import AttendanceLog
 from .serializers import AttendanceLogSerializer
+from apps.core.permissions import IsDeptManagerReadOnly, IsAuditorOrReadOnly
 
 
 class AttendanceLogViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = AttendanceLog.objects.select_related("employee").all()
     serializer_class = AttendanceLogSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsDeptManagerReadOnly, IsAuditorOrReadOnly]
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = [
         "employee__employee_id",

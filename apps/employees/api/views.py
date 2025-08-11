@@ -2,12 +2,13 @@ from rest_framework import viewsets, filters
 from rest_framework.permissions import IsAuthenticated
 from apps.employees.models import Employee
 from .serializers import EmployeeSerializer
+from apps.core.permissions import IsAuditorOrReadOnly, IsDeptManagerReadOnly
 
 
 class EmployeeViewSet(viewsets.ModelViewSet):
     queryset = Employee.objects.select_related("department").all()
     serializer_class = EmployeeSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsAuditorOrReadOnly, IsDeptManagerReadOnly]
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ["employee_id", "full_name", "job_title", "department__name"]
     ordering_fields = ["employee_id", "full_name", "created_at"]

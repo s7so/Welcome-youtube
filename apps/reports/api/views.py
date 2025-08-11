@@ -13,6 +13,7 @@ from django.http import HttpResponse
 
 from apps.attendance.models import AttendanceLog
 from apps.employees.models import Employee
+from apps.core.permissions import IsDeptManagerReadOnly, IsAuditorOrReadOnly
 from .serializers import (
     MonthlyReportResponseSerializer,
     WorkHoursReportResponseSerializer,
@@ -20,7 +21,7 @@ from .serializers import (
 
 
 class MonthlyReportView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsDeptManagerReadOnly, IsAuditorOrReadOnly]
 
     def get(self, request, *args, **kwargs):
         department_id = request.query_params.get("department")
@@ -115,7 +116,7 @@ class MonthlyReportView(APIView):
 
 
 class DepartmentMonthlySummaryView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsDeptManagerReadOnly, IsAuditorOrReadOnly]
 
     def get(self, request, *args, **kwargs):
         start_param = request.query_params.get("start")
@@ -157,7 +158,7 @@ class DepartmentMonthlySummaryView(APIView):
 
 
 class WorkHoursMonthlyReportView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsDeptManagerReadOnly, IsAuditorOrReadOnly]
 
     def get(self, request, *args, **kwargs):
         department_id = request.query_params.get("department")
