@@ -46,7 +46,17 @@ def get_last_sync_time() -> datetime | None:
 
 def set_last_sync_time(ts: datetime) -> None:
     SyncState.objects.update_or_create(
-        key="attendance", defaults={"last_sync_time": ts}
+        key="attendance", defaults={"last_sync_time": ts, "last_error_at": None, "last_error_message": None}
+    )
+
+
+def set_last_error(message: str) -> None:
+    SyncState.objects.update_or_create(
+        key="attendance",
+        defaults={
+            "last_error_at": datetime.now(tz=timezone.utc),
+            "last_error_message": message,
+        },
     )
 
 
@@ -69,7 +79,9 @@ def run_sync_job() -> None:
             adapter.connect()
             raw_logs = adapter.fetch_logs_since(since=last_sync)
         except ConnectionError as exc:
-            logger.error("Failed to connect to FingerTec integration.", exc_info=exc)
+            msg = "Failed to connect to FingerTec integration."
+            logger.error(msg, exc_info=exc)
+            set_last_error(msg)
             send_critical("FingerTec integration offline!")
             return
 

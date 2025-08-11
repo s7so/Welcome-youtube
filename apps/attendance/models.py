@@ -31,6 +31,8 @@ class AttendanceLog(models.Model):
 class SyncState(models.Model):
     key = models.CharField(max_length=64, primary_key=True)
     last_sync_time = models.DateTimeField(null=True, blank=True)
+    last_error_at = models.DateTimeField(null=True, blank=True)
+    last_error_message = models.TextField(null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
