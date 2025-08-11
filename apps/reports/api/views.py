@@ -1,11 +1,15 @@
 from datetime import datetime
 from typing import Any, Dict, List
+import csv
+from io import StringIO
 
 from django.db.models import Min, Max, Count, Q
 from django.utils.dateparse import parse_datetime
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.decorators import api_view, permission_classes
+from django.http import HttpResponse
 
 from apps.attendance.models import AttendanceLog
 from apps.employees.models import Employee
@@ -19,6 +23,7 @@ class MonthlyReportView(APIView):
         department_id = request.query_params.get("department")
         start_param = request.query_params.get("start")
         end_param = request.query_params.get("end")
+        export = request.query_params.get("export")  # 'csv' optional
 
         if not start_param or not end_param:
             return Response({"detail": "start and end are required ISO datetimes"}, status=400)
@@ -62,6 +67,9 @@ class MonthlyReportView(APIView):
                 "last_seen": row["last_seen"],
             })
 
+        if export == "csv":
+            return self._export_csv(results, start, end, department_id)
+
         payload = {
             "department": department_id,
             "start": start,
@@ -71,3 +79,75 @@ class MonthlyReportView(APIView):
         }
         serializer = MonthlyReportResponseSerializer(payload)
         return Response(serializer.data)
+
+    def _export_csv(self, results: List[Dict[str, Any]], start, end, department_id):
+        buffer = StringIO()
+        writer = csv.writer(buffer)
+        writer.writerow([
+            "employee_identifier",
+            "full_name",
+            "department_name",
+            "total_logs",
+            "first_check_in",
+            "last_check_out",
+            "first_seen",
+            "last_seen",
+        ])
+        for r in results:
+            writer.writerow([
+                r["employee_identifier"],
+                r["full_name"],
+                r.get("department_name") or "",
+                r["total_logs"],
+                r.get("first_check_in") or "",
+                r.get("last_check_out") or "",
+                r.get("first_seen") or "",
+                r.get("last_seen") or "",
+            ])
+        resp = HttpResponse(buffer.getvalue(), content_type="text/csv; charset=utf-8")
+        resp["Content-Disposition"] = (
+            f"attachment; filename=monthly-report_{department_id or 'all'}_{start.date()}_{end.date()}.csv"
+        )
+        return resp
+
+
+class DepartmentMonthlySummaryView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        start_param = request.query_params.get("start")
+        end_param = request.query_params.get("end")
+        if not start_param or not end_param:
+            return Response({"detail": "start and end are required ISO datetimes"}, status=400)
+        start = parse_datetime(start_param)
+        end = parse_datetime(end_param)
+        if not start or not end or start > end:
+            return Response({"detail": "invalid start/end"}, status=400)
+
+        logs = AttendanceLog.objects.select_related("employee", "employee__department").filter(
+            check_time__gte=start, check_time__lte=end
+        )
+        agg = logs.values("employee__department__id", "employee__department__name").annotate(
+            employees_count=Count("employee", distinct=True),
+            logs_count=Count("id"),
+            first_seen=Min("check_time"),
+            last_seen=Max("check_time"),
+        ).order_by("employee__department__name")
+
+        data = [
+            {
+                "department_id": row["employee__department__id"],
+                "department_name": row["employee__department__name"],
+                "employees_count": row["employees_count"],
+                "logs_count": row["logs_count"],
+                "first_seen": row["first_seen"],
+                "last_seen": row["last_seen"],
+            }
+            for row in agg
+        ]
+        return Response({
+            "start": start,
+            "end": end,
+            "count": len(data),
+            "results": data,
+        })
