@@ -1,0 +1,2 @@
+Feature,Reach (users/week),Impact (1-3),Confidence (0-1),Effort (person-weeks),RICE score,Notes
+مثال: مزامنة حركات الحضور من FingerTec,20,3,0.8,2,=B2*C2*D2/E2,أولوية عالية لأن التكامل أساسي

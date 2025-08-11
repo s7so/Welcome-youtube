@@ -1,37 +1,17 @@
-# Welcome YouTube
+### نظام إدارة الحضور والانصراف الحديث — Project Atlas
 
-A repository for YouTube-related content and projects.
+نظام داخلي لإدارة الحضور والانصراف والإجازات وتقارير الموارد البشرية، مخصص للعمل داخل شبكة الشركة، مع تكامل مع جهاز البصمة (FingerTec).
 
-## About
+- المالك/الراعي: شركة مصافي الوسط | قسم تقنية المعلومات والاتصالات
+- تاريخ البدء: 24/05/2024
+- الإصدار المستهدف (MVP): بعد 3 أشهر من تاريخ البدء (تقدير أولي)
+- الحالة الحالية: Phase‑0 مكتملة (مسودة أولية)
 
-This repository serves as a home for YouTube-related projects, code samples, and resources. Feel free to explore and contribute!
+روابط وثائق المشروع:
+- وثيقة Phase‑0: `docs/phase-0.md`
+- سجل القرارات الهندسية (ADR): `docs/adr/0001-choose-architecture.md`
+- قالب مفاضلة RICE: `docs/templates/rice-template.csv`
+- سجل المخاطر: `docs/risk-register.csv`
 
-## Getting Started
-
-To get started with this repository:
-
-1. Clone the repository:
-   ```
-   git clone https://github.com/s7so/Welcome-youtube.git
-   ```
-
-2. Navigate to the project directory:
-   ```
-   cd Welcome-youtube
-   ```
-
-## Features
-
-- [Coming soon]
-
-## License
-
-This project is open source and available under the [MIT License](LICENSE).
-
-## Contact
-
-If you have any questions or suggestions, please feel free to open an issue or pull request.
-
----
-
-Happy coding!
+الخطوة التالية المقترحة:
+- اعتماد قرار المعمارية (Web داخل الشبكة باستخدام Python/Django) والانطلاق إلى Phase‑1 (Discovery and Architecture Blueprint).
