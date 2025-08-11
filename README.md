@@ -10,6 +10,7 @@
 روابط وثائق المشروع:
 - وثيقة Phase‑0: `docs/phase-0.md`
 - وثيقة Phase‑1: `docs/phase-1.md`
+- وثيقة Phase‑2: `docs/phase-2.md`
 - سجل القرارات الهندسية (ADR): `docs/adr/0001-choose-architecture.md`
 - قالب مفاضلة RICE: `docs/templates/rice-template.csv`
 - سجل المخاطر: `docs/risk-register.csv`
