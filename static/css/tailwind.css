@@ -1,0 +1,235 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom CSS Variables */
+:root {
+  --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  --success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  --warning-gradient: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+  --danger-gradient: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+  --glass-bg: rgba(255, 255, 255, 0.1);
+  --glass-border: rgba(255, 255, 255, 0.2);
+}
+
+/* Dark mode variables */
+.dark {
+  --glass-bg: rgba(0, 0, 0, 0.2);
+  --glass-border: rgba(255, 255, 255, 0.1);
+}
+
+/* Custom Animations */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 20px rgba(102, 126, 234, 0.4); }
+  50% { box-shadow: 0 0 40px rgba(102, 126, 234, 0.8); }
+}
+
+@keyframes slide-in-right {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes fade-in-up {
+  from { transform: translateY(30px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* Custom Components */
+@layer components {
+  /* Glass Card */
+  .glass-card {
+    @apply backdrop-blur-md bg-white/10 border border-white/20 rounded-2xl shadow-2xl;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+  }
+
+  /* Gradient Button */
+  .btn-gradient-primary {
+    @apply px-6 py-3 rounded-xl font-semibold text-white transition-all duration-300 transform hover:scale-105 hover:shadow-lg;
+    background: var(--primary-gradient);
+  }
+
+  .btn-gradient-secondary {
+    @apply px-6 py-3 rounded-xl font-semibold text-white transition-all duration-300 transform hover:scale-105 hover:shadow-lg;
+    background: var(--secondary-gradient);
+  }
+
+  .btn-gradient-success {
+    @apply px-6 py-3 rounded-xl font-semibold text-white transition-all duration-300 transform hover:scale-105 hover:shadow-lg;
+    background: var(--success-gradient);
+  }
+
+  /* Floating Animation */
+  .float-animation {
+    animation: float 3s ease-in-out infinite;
+  }
+
+  /* Pulse Glow */
+  .pulse-glow {
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+
+  /* Slide In */
+  .slide-in-right {
+    animation: slide-in-right 0.6s ease-out;
+  }
+
+  /* Fade In Up */
+  .fade-in-up {
+    animation: fade-in-up 0.8s ease-out;
+  }
+
+  /* Custom Scrollbar */
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(102, 126, 234, 0.5) transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(102, 126, 234, 0.5);
+    border-radius: 3px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(102, 126, 234, 0.8);
+  }
+
+  /* Dashboard Cards */
+  .dashboard-card {
+    @apply glass-card p-6 transition-all duration-300 hover:scale-105;
+  }
+
+  .dashboard-card:hover {
+    @apply shadow-2xl;
+    transform: translateY(-5px);
+  }
+
+  /* Navigation */
+  .nav-link {
+    @apply flex items-center px-4 py-3 text-gray-700 dark:text-gray-200 rounded-lg transition-all duration-200 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 dark:hover:from-blue-900/20 dark:hover:to-purple-900/20;
+  }
+
+  .nav-link.active {
+    @apply bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg;
+  }
+
+  /* Table Styles */
+  .modern-table {
+    @apply w-full bg-white/5 backdrop-blur-sm rounded-xl overflow-hidden;
+  }
+
+  .modern-table th {
+    @apply px-6 py-4 text-left text-sm font-semibold text-gray-700 dark:text-gray-200 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20;
+  }
+
+  .modern-table td {
+    @apply px-6 py-4 text-sm text-gray-600 dark:text-gray-300 border-b border-gray-200/20;
+  }
+
+  .modern-table tr:hover {
+    @apply bg-gradient-to-r from-blue-50/50 to-purple-50/50 dark:from-blue-900/10 dark:to-purple-900/10;
+  }
+
+  /* Form Styles */
+  .modern-input {
+    @apply w-full px-4 py-3 bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl text-gray-700 dark:text-gray-200 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200;
+  }
+
+  .modern-input:focus {
+    @apply shadow-lg;
+    transform: translateY(-2px);
+  }
+
+  /* Status Badges */
+  .status-badge {
+    @apply px-3 py-1 rounded-full text-xs font-semibold;
+  }
+
+  .status-active {
+    @apply bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400;
+  }
+
+  .status-inactive {
+    @apply bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400;
+  }
+
+  .status-pending {
+    @apply bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400;
+  }
+
+  /* Loading Spinner */
+  .loading-spinner {
+    @apply animate-spin rounded-full border-4 border-blue-200 border-t-blue-600;
+  }
+
+  /* Chart Container */
+  .chart-container {
+    @apply glass-card p-6 h-80;
+  }
+
+  /* Notification */
+  .notification {
+    @apply fixed top-4 right-4 z-50 glass-card p-4 max-w-sm slide-in-right;
+  }
+
+  .notification.success {
+    @apply border-green-500/50;
+  }
+
+  .notification.error {
+    @apply border-red-500/50;
+  }
+
+  .notification.warning {
+    @apply border-yellow-500/50;
+  }
+}
+
+/* Responsive Design */
+@layer utilities {
+  .text-gradient {
+    background: var(--primary-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .bg-gradient-primary {
+    background: var(--primary-gradient);
+  }
+
+  .bg-gradient-secondary {
+    background: var(--secondary-gradient);
+  }
+
+  .bg-gradient-success {
+    background: var(--success-gradient);
+  }
+
+  .bg-gradient-warning {
+    background: var(--warning-gradient);
+  }
+
+  .bg-gradient-danger {
+    background: var(--danger-gradient);
+  }
+}
+
+/* Dark mode transitions */
+* {
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+}

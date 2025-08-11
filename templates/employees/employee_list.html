@@ -1,0 +1,294 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}إدارة الموظفين - Atlas{% endblock %}
+
+{% block content %}
+<div x-data="employeeManager" class="space-y-6">
+    
+    <!-- Header -->
+    <div class="glass-card p-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-gradient">إدارة الموظفين</h1>
+                <p class="text-gray-600 dark:text-gray-300 mt-2">إدارة بيانات الموظفين وإضافة موظفين جدد</p>
+            </div>
+            <button @click="openAddModal()" class="btn-gradient-primary flex items-center space-x-2 space-x-reverse">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                </svg>
+                <span>إضافة موظف جديد</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Filters and Search -->
+    <div class="glass-card p-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <!-- Search -->
+            <div class="relative">
+                <input type="text" 
+                       x-model="searchTerm" 
+                       placeholder="البحث عن موظف..." 
+                       class="modern-input pr-10">
+                <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                    <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                </div>
+            </div>
+
+            <!-- Department Filter -->
+            <select x-model="selectedDepartment" class="modern-input">
+                <option value="">جميع الأقسام</option>
+                <template x-for="dept in departments" :key="dept.id">
+                    <option :value="dept.id" x-text="dept.name"></option>
+                </template>
+            </select>
+
+            <!-- Status Filter -->
+            <select class="modern-input">
+                <option value="">جميع الحالات</option>
+                <option value="active">نشط</option>
+                <option value="inactive">غير نشط</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Employees Table -->
+    <div class="glass-card overflow-hidden">
+        <div class="px-6 py-4 border-b border-white/20">
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                    قائمة الموظفين 
+                    <span class="text-sm text-gray-500 dark:text-gray-400" x-text="`(${filteredEmployees.length})`"></span>
+                </h3>
+                <div class="flex items-center space-x-2 space-x-reverse">
+                    <button class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+                        </svg>
+                    </button>
+                    <button class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div x-show="loading" class="flex items-center justify-center py-12">
+            <div class="loading-spinner w-8 h-8"></div>
+        </div>
+
+        <!-- Table -->
+        <div x-show="!loading" class="overflow-x-auto">
+            <table class="modern-table">
+                <thead>
+                    <tr>
+                        <th>الموظف</th>
+                        <th>الرقم الوظيفي</th>
+                        <th>القسم</th>
+                        <th>الوظيفة</th>
+                        <th>الحالة</th>
+                        <th>آخر تحديث</th>
+                        <th>الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template x-for="employee in filteredEmployees" :key="employee.id">
+                        <tr class="hover:bg-white/5 transition-colors duration-200">
+                            <td>
+                                <div class="flex items-center">
+                                    <div class="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold ml-3">
+                                        <span x-text="employee.full_name.charAt(0)"></span>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-900 dark:text-white" x-text="employee.full_name"></p>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400" x-text="employee.email || 'لا يوجد بريد إلكتروني'"></p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="text-sm font-mono text-gray-900 dark:text-white" x-text="employee.employee_id"></span>
+                            </td>
+                            <td>
+                                <span class="text-sm text-gray-600 dark:text-gray-300" x-text="employee.department_name"></span>
+                            </td>
+                            <td>
+                                <span class="text-sm text-gray-600 dark:text-gray-300" x-text="employee.job_title"></span>
+                            </td>
+                            <td>
+                                <span x-show="employee.is_active" class="status-badge status-active">نشط</span>
+                                <span x-show="!employee.is_active" class="status-badge status-inactive">غير نشط</span>
+                            </td>
+                            <td>
+                                <span class="text-sm text-gray-500 dark:text-gray-400" x-text="new Date(employee.updated_at).toLocaleDateString('ar-SA')"></span>
+                            </td>
+                            <td>
+                                <div class="flex items-center space-x-2 space-x-reverse">
+                                    <button @click="openEditModal(employee)" class="p-2 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                        </svg>
+                                    </button>
+                                    <button class="p-2 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Empty State -->
+        <div x-show="!loading && filteredEmployees.length === 0" class="text-center py-12">
+            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
+            </svg>
+            <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">لا يوجد موظفين</h3>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">ابدأ بإضافة موظف جديد</p>
+            <div class="mt-6">
+                <button @click="openAddModal()" class="btn-gradient-primary">
+                    إضافة موظف جديد
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Employee Modal -->
+<div x-show="showAddModal" 
+     x-transition:enter="transition ease-out duration-300"
+     x-transition:enter-start="opacity-0"
+     x-transition:enter-end="opacity-100"
+     x-transition:leave="transition ease-in duration-200"
+     x-transition:leave-start="opacity-100"
+     x-transition:leave-end="opacity-0"
+     class="fixed inset-0 z-50 overflow-y-auto">
+    
+    <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" @click="showAddModal = false"></div>
+
+        <div class="inline-block w-full max-w-md p-6 my-8 overflow-hidden text-right align-middle transition-all transform bg-white dark:bg-gray-800 shadow-xl rounded-2xl">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-lg font-medium text-gray-900 dark:text-white" x-text="editingEmployee ? 'تعديل موظف' : 'إضافة موظف جديد'"></h3>
+                <button @click="showAddModal = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <form @submit.prevent="saveEmployee()" class="space-y-4">
+                <!-- Employee ID -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">الرقم الوظيفي</label>
+                    <input type="text" 
+                           x-model="editingEmployee.employee_id" 
+                           class="modern-input" 
+                           placeholder="مثال: EMP-001"
+                           required>
+                </div>
+
+                <!-- Full Name -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">الاسم الكامل</label>
+                    <input type="text" 
+                           x-model="editingEmployee.full_name" 
+                           class="modern-input" 
+                           placeholder="الاسم الكامل للموظف"
+                           required>
+                </div>
+
+                <!-- Department -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">القسم</label>
+                    <select x-model="editingEmployee.department" class="modern-input" required>
+                        <option value="">اختر القسم</option>
+                        <template x-for="dept in departments" :key="dept.id">
+                            <option :value="dept.id" x-text="dept.name"></option>
+                        </template>
+                    </select>
+                </div>
+
+                <!-- Job Title -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">الوظيفة</label>
+                    <input type="text" 
+                           x-model="editingEmployee.job_title" 
+                           class="modern-input" 
+                           placeholder="المسمى الوظيفي">
+                </div>
+
+                <!-- Email -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">البريد الإلكتروني</label>
+                    <input type="email" 
+                           x-model="editingEmployee.email" 
+                           class="modern-input" 
+                           placeholder="example@company.com">
+                </div>
+
+                <!-- Phone -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">رقم الهاتف</label>
+                    <input type="tel" 
+                           x-model="editingEmployee.phone" 
+                           class="modern-input" 
+                           placeholder="+966 50 123 4567">
+                </div>
+
+                <!-- Status -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">الحالة</label>
+                    <div class="flex items-center space-x-4 space-x-reverse">
+                        <label class="flex items-center">
+                            <input type="radio" 
+                                   x-model="editingEmployee.is_active" 
+                                   :value="true" 
+                                   class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500">
+                            <span class="mr-2 text-sm text-gray-700 dark:text-gray-300">نشط</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="radio" 
+                                   x-model="editingEmployee.is_active" 
+                                   :value="false" 
+                                   class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500">
+                            <span class="mr-2 text-sm text-gray-700 dark:text-gray-300">غير نشط</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="flex items-center justify-end space-x-3 space-x-reverse pt-6">
+                    <button type="button" 
+                            @click="showAddModal = false" 
+                            class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-200">
+                        إلغاء
+                    </button>
+                    <button type="submit" 
+                            class="btn-gradient-primary">
+                        <span x-text="editingEmployee ? 'حفظ التغييرات' : 'إضافة موظف'"></span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Initialize employee manager
+document.addEventListener('DOMContentLoaded', function() {
+    // Any additional initialization can go here
+});
+</script>
+{% endblock %}
