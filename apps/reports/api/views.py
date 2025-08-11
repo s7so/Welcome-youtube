@@ -13,7 +13,10 @@ from django.http import HttpResponse
 
 from apps.attendance.models import AttendanceLog
 from apps.employees.models import Employee
-from .serializers import MonthlyReportResponseSerializer
+from .serializers import (
+    MonthlyReportResponseSerializer,
+    WorkHoursReportResponseSerializer,
+)
 
 
 class MonthlyReportView(APIView):
@@ -151,3 +154,87 @@ class DepartmentMonthlySummaryView(APIView):
             "count": len(data),
             "results": data,
         })
+
+
+class WorkHoursMonthlyReportView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        department_id = request.query_params.get("department")
+        start_param = request.query_params.get("start")
+        end_param = request.query_params.get("end")
+        if not start_param or not end_param:
+            return Response({"detail": "start and end are required ISO datetimes"}, status=400)
+        start = parse_datetime(start_param)
+        end = parse_datetime(end_param)
+        if not start or not end or start > end:
+            return Response({"detail": "invalid start/end"}, status=400)
+
+        logs_qs = AttendanceLog.objects.select_related("employee", "employee__department").filter(
+            check_time__gte=start, check_time__lte=end
+        )
+        if department_id:
+            logs_qs = logs_qs.filter(employee__department_id=department_id)
+
+        # Pull all logs ordered by employee and time
+        logs_qs = logs_qs.order_by("employee_id", "check_time")
+
+        results: List[Dict[str, Any]] = []
+        # Iterate per employee
+        current_emp = None
+        buffer: List[AttendanceLog] = []
+        for log in logs_qs.iterator():
+            if current_emp is None:
+                current_emp = log.employee_id
+            if log.employee_id != current_emp:
+                # process buffer
+                results.append(self._summarize(buffer))
+                buffer = []
+                current_emp = log.employee_id
+            buffer.append(log)
+        if buffer:
+            results.append(self._summarize(buffer))
+
+        # Fill identity fields from first log of each buffer
+        for r in results:
+            emp = Employee.objects.select_related("department").get(id=r["employee_id"])  # guaranteed by logs
+            r.update(
+                employee_identifier=emp.employee_id,
+                full_name=emp.full_name,
+                department_name=(emp.department.name if emp.department else None),
+                total_hours=round(r["total_seconds"] / 3600.0, 2),
+            )
+
+        payload = {
+            "department": department_id,
+            "start": start,
+            "end": end,
+            "count": len(results),
+            "results": results,
+        }
+        serializer = WorkHoursReportResponseSerializer(payload)
+        return Response(serializer.data)
+
+    def _summarize(self, logs: List[AttendanceLog]) -> Dict[str, Any]:
+        seconds = 0
+        sessions = 0
+        i = 0
+        while i < len(logs):
+            if logs[i].log_type == "IN":
+                # find next OUT
+                j = i + 1
+                while j < len(logs) and logs[j].log_type != "OUT":
+                    j += 1
+                if j < len(logs) and logs[j].log_type == "OUT":
+                    delta = (logs[j].check_time - logs[i].check_time).total_seconds()
+                    if delta > 0:
+                        seconds += int(delta)
+                        sessions += 1
+                    i = j + 1
+                    continue
+            i += 1
+        return {
+            "employee_id": logs[0].employee_id if logs else None,
+            "sessions": sessions,
+            "total_seconds": seconds,
+        }

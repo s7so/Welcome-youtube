@@ -19,3 +19,21 @@ class MonthlyReportResponseSerializer(serializers.Serializer):
     end = serializers.DateTimeField()
     count = serializers.IntegerField()
     results = MonthlyEmployeeSummarySerializer(many=True)
+
+
+class WorkHoursEmployeeSummarySerializer(serializers.Serializer):
+    employee_id = serializers.UUIDField()
+    employee_identifier = serializers.CharField()
+    full_name = serializers.CharField()
+    department_name = serializers.CharField(allow_null=True)
+    sessions = serializers.IntegerField()
+    total_seconds = serializers.IntegerField()
+    total_hours = serializers.FloatField()
+
+
+class WorkHoursReportResponseSerializer(serializers.Serializer):
+    department = serializers.CharField(allow_null=True)
+    start = serializers.DateTimeField()
+    end = serializers.DateTimeField()
+    count = serializers.IntegerField()
+    results = WorkHoursEmployeeSummarySerializer(many=True)
