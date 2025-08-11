@@ -67,7 +67,7 @@ services:
     env_file: ["../.env.example"]
     volumes:
       - ..:/app
-    command: bash -lc "pip install -r requirements.txt && python manage.py migrate django_celery_beat && celery -A atlas beat -l info"
+    command: bash -lc "pip install -r requirements.txt && python manage.py migrate django_celery_beat && python manage.py schedule_sync && celery -A atlas beat -l info"
     depends_on:
       postgres:
         condition: service_healthy
