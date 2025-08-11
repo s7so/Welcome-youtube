@@ -8,7 +8,10 @@ from django.db import connection, transaction
 
 from apps.attendance.models import AttendanceLog, SyncState
 from apps.employees.models import Employee
-from apps.integrations.fingertec.client import FingerTecClient, ConnectionError
+from apps.integrations.fingertec.adapters import (
+    create_adapter_from_settings,
+    ConnectionError,
+)
 from apps.platform.alerting.alerter import send_critical
 
 logger = logging.getLogger(__name__)
@@ -56,15 +59,12 @@ def run_sync_job() -> None:
         logger.info("Starting sync for logs after: %s", last_sync.isoformat())
 
         try:
-            client = FingerTecClient(
-                ip=getattr(settings, "FINGERTEC_IP", None),
-                port=int(getattr(settings, "FINGERTEC_PORT", 0) or 0),
-            )
-            client.connect()
-            raw_logs = client.get_new_logs(since=last_sync)
+            adapter = create_adapter_from_settings(settings)
+            adapter.connect()
+            raw_logs = adapter.fetch_logs_since(since=last_sync)
         except ConnectionError as exc:
-            logger.error("Failed to connect to FingerTec device.", exc_info=exc)
-            send_critical("FingerTec device is offline!")
+            logger.error("Failed to connect to FingerTec integration.", exc_info=exc)
+            send_critical("FingerTec integration offline!")
             return
 
         raw_logs = list(raw_logs or [])
@@ -77,36 +77,39 @@ def run_sync_job() -> None:
 
         with transaction.atomic():
             for raw in raw_logs:
-                log = client.parse(raw)
-                emp = Employee.objects.filter(employee_id=log.employee_id).first()
+                employee_id = str(raw.get("employee_id"))
+                timestamp = raw.get("timestamp")
+                log_type = str(raw.get("type", "IN")).upper()
+
+                emp = Employee.objects.filter(employee_id=employee_id).first()
                 if not emp:
                     logger.warning(
-                        "Skipping log for unknown employee ID: %s", log.employee_id
+                        "Skipping log for unknown employee ID: %s", employee_id
                     )
                     continue
 
                 exists = AttendanceLog.objects.filter(
-                    employee=emp, check_time=log.timestamp
+                    employee=emp, check_time=timestamp
                 ).exists()
                 if exists:
                     logger.info(
                         "Skipping duplicate log for employee %s at %s",
                         emp.employee_id,
-                        log.timestamp,
+                        timestamp,
                     )
                     continue
 
                 AttendanceLog.objects.create(
                     employee=emp,
-                    check_time=log.timestamp,
-                    log_type=log.type,
-                    source="FingerTec Device",
+                    check_time=timestamp,
+                    log_type=log_type,
+                    source="FingerTec",
                 )
                 new_logs_count += 1
                 latest_log_time = (
-                    max(latest_log_time, log.timestamp)
+                    max(latest_log_time, timestamp)
                     if latest_log_time is not None
-                    else log.timestamp
+                    else timestamp
                 )
 
             if new_logs_count > 0 and latest_log_time is not None:
