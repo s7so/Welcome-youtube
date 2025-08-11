@@ -1,5 +1,8 @@
 from datetime import datetime, timezone
 from django.utils.timezone import now
+from django.contrib.admin.views.decorators import staff_member_required
+from django.utils.decorators import method_decorator
+from django.views.generic import TemplateView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -20,3 +23,8 @@ class StatusView(APIView):
             "last_error_message": state.last_error_message if state else None,
             "today_logs_count": today_count,
         })
+
+
+@method_decorator(staff_member_required, name="dispatch")
+class AdminToolsView(TemplateView):
+    template_name = "admin/tools.html"

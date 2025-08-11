@@ -7,7 +7,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from apps.employees.api.views import EmployeeViewSet
 from apps.attendance.api.views import AttendanceLogViewSet
 from apps.reports.api.views import MonthlyReportView, DepartmentMonthlySummaryView, WorkHoursMonthlyReportView
-from apps.core.views import StatusView
+from apps.core.views import StatusView, AdminToolsView
 
 
 def healthz(_request):
@@ -20,6 +20,7 @@ router.register(r"attendance-logs", AttendanceLogViewSet, basename="attendance-l
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path("admin/tools", AdminToolsView.as_view()),
     path("_healthz", healthz),
     path("api/", include(router.urls)),
     path("api/reports/monthly", MonthlyReportView.as_view()),
