@@ -26,3 +26,17 @@ class AttendanceLog(models.Model):
 
     def __str__(self) -> str:
         return f"{self.employee.employee_id} {self.log_type} @ {self.check_time}"
+
+
+class SyncState(models.Model):
+    key = models.CharField(max_length=64, primary_key=True)
+    last_sync_time = models.DateTimeField(null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "sync_state"
+        verbose_name = "Sync State"
+        verbose_name_plural = "Sync States"
+
+    def __str__(self) -> str:
+        return f"{self.key}: {self.last_sync_time}"
