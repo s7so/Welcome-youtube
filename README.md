@@ -1,30 +1,250 @@
-### نظام إدارة الحضور والانصراف الحديث — Project Atlas
+# Atlas - نظام إدارة الحضور والانصراف
 
-نظام داخلي لإدارة الحضور والانصراف والإجازات وتقارير الموارد البشرية، مخصص للعمل داخل شبكة الشركة، مع تكامل مع جهاز البصمة (FingerTec).
+نظام ويب حديث لإدارة حضور الموظفين والانصراف، مبني باستخدام Django و Django REST Framework.
 
-- المالك/الراعي: شركة مصافي الوسط | قسم تقنية المعلومات والاتصالات
-- تاريخ البدء: 24/05/2024
-- الإصدار المستهدف (MVP): بعد 3 أشهر من تاريخ البدء (تقدير أولي)
-- الحالة الحالية: Phase‑0 مكتملة (مسودة أولية)
+## الميزات الرئيسية
 
-روابط وثائق المشروع:
-- وثيقة Phase‑0: `docs/phase-0.md`
-- وثيقة Phase‑1: `docs/phase-1.md`
-- وثيقة Phase‑2: `docs/phase-2.md`
-- وثيقة Phase‑3: `docs/phase-3.md`
-- Pseudo‑code (Phase‑4): `docs/pseudocode/sync_attendance_logs.md`
-- سجل القرارات الهندسية (ADR): `docs/adr/0001-choose-architecture.md`
-- قالب مفاضلة RICE: `docs/templates/rice-template.csv`
-- سجل المخاطر: `docs/risk-register.csv`
+- **إدارة الموظفين**: إضافة، تعديل، وحذف بيانات الموظفين
+- **سجل الحضور**: تتبع دخول وخروج الموظفين
+- **التكامل مع أجهزة البصمة**: دعم أجهزة FingerTec
+- **التقارير**: تقارير شهرية وإدارية شاملة
+- **رفع البيانات المجمع**: استيراد بيانات الموظفين عبر CSV
+- **إدارة الصلاحيات**: نظام صلاحيات متقدم (HR Admin, Department Manager, Auditor)
 
-مخططات التدفق والربط:
-- مخطط المزامنة (US-03): `docs/flowcharts/us-03-sync-attendance.puml` → `docs/flowcharts/us-03-sync-attendance.svg`
-- التتبع إلى شبه‑شيفرة: `docs/traceability/flow-to-pseudocode.md`
+## المتطلبات
 
-هياكل المطور (Developer scaffolding):
-- أمر إدارة Django: `apps/attendance/management/commands/sync_logs.py`
-- اختبارات: `tests/attendance/test_sync_logs.py`
-- رسائل الأخطاء: `docs/templates/errors.md`
+- Python 3.12+
+- PostgreSQL 16+
+- Redis (لـ Celery)
+- Docker & Docker Compose (اختياري)
 
-الخطوة التالية المقترحة:
-- الانتقال إلى Phase‑5 (Architecture & Tech Stack) لتثبيت Django/DRF وPostgreSQL وتصميم طبقات التكامل مع FingerTec.
+## التثبيت والتشغيل
+
+### باستخدام Docker (موصى به)
+
+```bash
+# استنساخ المشروع
+git clone <repository-url>
+cd atlas
+
+# تشغيل الخدمات
+docker compose up -d
+
+# إنشاء مستخدم مدير
+docker compose exec web python manage.py createsuperuser
+
+# فتح المتصفح
+open http://localhost:8000
+```
+
+### التثبيت المحلي
+
+```bash
+# إنشاء بيئة افتراضية
+python -m venv .venv
+source .venv/bin/activate  # Linux/Mac
+# أو
+.venv\Scripts\activate  # Windows
+
+# تثبيت المتطلبات
+pip install -r requirements.txt
+pip install -r requirements-dev.txt
+
+# إعداد قاعدة البيانات
+python manage.py migrate
+
+# إنشاء مستخدم مدير
+python manage.py createsuperuser
+
+# تشغيل الخادم
+python manage.py runserver
+```
+
+## الاختبارات
+
+### تشغيل جميع الاختبارات
+
+```bash
+# تشغيل جميع الاختبارات
+pytest
+
+# تشغيل الاختبارات مع تفاصيل أكثر
+pytest -v
+
+# تشغيل الاختبارات مع تغطية
+pytest --cov=apps --cov-report=html
+```
+
+### أنواع الاختبارات
+
+#### اختبارات الوحدة (Unit Tests)
+```bash
+# تشغيل اختبارات الوحدة فقط
+pytest -m unit
+
+# تشغيل اختبارات الوحدة مع تفاصيل
+pytest -m unit -v
+```
+
+#### اختبارات التكامل (Integration Tests)
+```bash
+# تشغيل اختبارات التكامل فقط
+pytest -m integration
+
+# تشغيل اختبارات API
+pytest -m api
+
+# تشغيل اختبارات المزامنة
+pytest -m sync
+
+# تشغيل اختبارات رفع البيانات المجمع
+pytest -m bulk_upload
+```
+
+#### اختبارات محددة
+```bash
+# تشغيل اختبارات ملف معين
+pytest tests/test_integration.py
+
+# تشغيل اختبار فئة معينة
+pytest tests/test_integration.py::TestEmployeeIntegration
+
+# تشغيل اختبار دالة معينة
+pytest tests/test_integration.py::TestEmployeeIntegration::test_employee_list_authorized
+```
+
+### تشغيل الاختبارات مع قاعدة بيانات
+
+```bash
+# تشغيل الاختبارات مع قاعدة بيانات PostgreSQL
+DATABASE_URL=postgresql+psycopg://atlas:atlas@localhost:5432/atlas pytest -m integration
+
+# تشغيل الاختبارات مع قاعدة بيانات SQLite (أسرع للاختبارات)
+DATABASE_URL=sqlite:///test.db pytest -m integration
+```
+
+## هيكل المشروع
+
+```
+atlas/
+├── apps/
+│   ├── core/           # الوظائف الأساسية والصلاحيات
+│   ├── employees/      # إدارة الموظفين
+│   ├── attendance/     # سجل الحضور والمزامنة
+│   ├── reports/        # التقارير
+│   └── integrations/   # التكامل مع الأجهزة الخارجية
+├── atlas/              # إعدادات Django الرئيسية
+├── tests/              # الاختبارات
+│   ├── test_unit.py           # اختبارات الوحدة
+│   ├── test_integration.py    # اختبارات التكامل
+│   ├── test_bulk_upload.py    # اختبارات رفع البيانات
+│   └── test_sync_integration.py # اختبارات المزامنة
+├── requirements.txt    # متطلبات الإنتاج
+├── requirements-dev.txt # متطلبات التطوير
+├── pytest.ini         # إعدادات pytest
+├── .flake8            # إعدادات flake8
+└── docker-compose.yml # إعدادات Docker
+```
+
+## API Endpoints
+
+### الموظفين
+- `GET /api/employees/` - قائمة الموظفين
+- `POST /api/employees/` - إضافة موظف جديد
+- `GET /api/employees/{id}/` - تفاصيل موظف
+- `PATCH /api/employees/{id}/` - تحديث موظف
+- `POST /api/employees/bulk-upload/` - رفع بيانات مجمع
+
+### الحضور
+- `GET /api/attendance/` - قائمة سجلات الحضور
+- `GET /api/attendance/?employee=EMP-001` - فلترة حسب الموظف
+- `GET /api/attendance/?log_type=IN` - فلترة حسب نوع السجل
+
+### التقارير
+- `GET /api/reports/monthly/?year=2024&month=1` - التقرير الشهري
+- `GET /api/reports/department-monthly/?year=2024&month=1` - ملخص الأقسام
+- `GET /api/reports/work-hours/?year=2024&month=1` - ساعات العمل
+
+### النظام
+- `GET /api/status/` - حالة النظام
+
+## إدارة الصلاحيات
+
+### الأدوار المتاحة
+- **HR_Admin**: صلاحيات كاملة على النظام
+- **Department_Manager**: صلاحيات محدودة على قسم معين
+- **Auditor**: صلاحيات قراءة فقط
+
+### إنشاء المستخدمين والأدوار
+```bash
+# إنشاء أدوار افتراضية
+python manage.py seed_initial_data
+
+# إنشاء مستخدم مع دور HR Admin
+python manage.py shell
+```
+```python
+from django.contrib.auth.models import User, Group
+from apps.core.auth import ROLE_HR_ADMIN
+
+# إنشاء مستخدم
+user = User.objects.create_user('hr_user', 'hr@example.com', 'password123')
+
+# إضافة دور HR Admin
+hr_group = Group.objects.get(name=ROLE_HR_ADMIN)
+user.groups.add(hr_group)
+```
+
+## التطوير
+
+### إضافة اختبارات جديدة
+
+#### اختبارات الوحدة
+```python
+@pytest.mark.unit
+class TestNewFeature:
+    def test_new_functionality(self):
+        # اختبار الوظيفة الجديدة
+        assert True
+```
+
+#### اختبارات التكامل
+```python
+@pytest.mark.integration
+@pytest.mark.api
+class TestNewAPI:
+    def setup_method(self):
+        # إعداد البيانات
+        pass
+    
+    def test_new_endpoint(self):
+        # اختبار النقطة النهائية الجديدة
+        assert True
+```
+
+### تشغيل الاختبارات في CI/CD
+
+```yaml
+# .github/workflows/ci.yml
+- name: Tests
+  run: |
+    python manage.py migrate
+    pytest -m unit
+    pytest -m integration
+```
+
+## المساهمة
+
+1. Fork المشروع
+2. إنشاء فرع للميزة الجديدة (`git checkout -b feature/amazing-feature`)
+3. Commit التغييرات (`git commit -m 'Add amazing feature'`)
+4. Push للفرع (`git push origin feature/amazing-feature`)
+5. فتح Pull Request
+
+## الترخيص
+
+هذا المشروع مرخص تحت رخصة MIT. راجع ملف `LICENSE` للتفاصيل.
+
+## الدعم
+
+للأسئلة والدعم التقني، يرجى التواصل مع فريق التطوير.

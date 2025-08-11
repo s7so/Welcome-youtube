@@ -5,6 +5,7 @@ from apps.employees.models import Employee
 from apps.attendance.models import AttendanceLog
 
 
+@pytest.mark.unit
 class TestPermissions:
     """Test permission classes without database."""
     
@@ -44,6 +45,7 @@ class TestPermissions:
         assert permission.has_permission(request, None) is True
 
 
+@pytest.mark.unit
 class TestModels:
     """Test model methods without database."""
     
@@ -64,6 +66,7 @@ class TestModels:
         assert "IN" in str(log)
 
 
+@pytest.mark.unit
 class TestUtils:
     """Test utility functions."""
     
