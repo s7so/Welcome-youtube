@@ -293,27 +293,64 @@ document.addEventListener('alpine:init', () => {
     // Attendance component
     Alpine.data('attendanceManager', () => ({
         attendanceLogs: [],
+        departments: [],
         loading: false,
+        searchTerm: '',
+        selectedDepartment: '',
         dateRange: {
             start: new Date().toISOString().split('T')[0],
             end: new Date().toISOString().split('T')[0]
         },
+        stats: {
+            totalRecords: 0,
+            presentToday: 0,
+            lateToday: 0,
+            absentToday: 0,
+            presentPercentage: 0,
+            latePercentage: 0,
+            absentPercentage: 0
+        },
+        pagination: {
+            currentPage: 1,
+            totalPages: 1,
+            total: 0,
+            startIndex: 0,
+            endIndex: 0
+        },
 
         init() {
+            this.loadDepartments();
             this.loadAttendanceLogs();
+            this.loadStats();
+        },
+
+        async loadDepartments() {
+            try {
+                const response = await fetch('/api/departments/');
+                if (response.ok) {
+                    this.departments = await response.json();
+                }
+            } catch (error) {
+                console.error('Error loading departments:', error);
+            }
         },
 
         async loadAttendanceLogs() {
+            this.loading = true;
             try {
-                this.loading = true;
                 const params = new URLSearchParams({
                     start_date: this.dateRange.start,
-                    end_date: this.dateRange.end
+                    end_date: this.dateRange.end,
+                    search: this.searchTerm,
+                    department: this.selectedDepartment,
+                    page: this.pagination.currentPage
                 });
-                
+
                 const response = await fetch(`/api/attendance/?${params}`);
                 if (response.ok) {
-                    this.attendanceLogs = await response.json();
+                    const data = await response.json();
+                    this.attendanceLogs = data.results;
+                    this.pagination = data.pagination;
                 }
             } catch (error) {
                 console.error('Error loading attendance logs:', error);
@@ -322,7 +359,19 @@ document.addEventListener('alpine:init', () => {
             }
         },
 
+        async loadStats() {
+            try {
+                const response = await fetch('/api/attendance/stats/');
+                if (response.ok) {
+                    this.stats = await response.json();
+                }
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        },
+
         async triggerSync() {
+            this.loading = true;
             try {
                 const response = await fetch('/api/attendance/sync/', {
                     method: 'POST',
@@ -332,31 +381,100 @@ document.addEventListener('alpine:init', () => {
                 });
 
                 if (response.ok) {
-                    window.dispatchEvent(new CustomEvent('show-notification', {
-                        detail: {
-                            message: 'تم بدء عملية المزامنة',
-                            type: 'success'
-                        }
-                    }));
-                    
-                    // Reload data after sync
-                    setTimeout(() => {
-                        this.loadAttendanceLogs();
-                    }, 5000);
+                    this.showNotification('تمت المزامنة بنجاح', 'success');
+                    this.loadAttendanceLogs();
+                    this.loadStats();
+                } else {
+                    this.showNotification('فشلت عملية المزامنة', 'error');
                 }
             } catch (error) {
-                console.error('Error triggering sync:', error);
-                window.dispatchEvent(new CustomEvent('show-notification', {
-                    detail: {
-                        message: 'حدث خطأ أثناء المزامنة',
-                        type: 'error'
-                    }
-                }));
+                console.error('Error syncing attendance:', error);
+                this.showNotification('حدث خطأ في المزامنة', 'error');
+            } finally {
+                this.loading = false;
             }
+        },
+
+        async deleteLog(logId) {
+            if (!confirm('هل أنت متأكد من حذف هذا السجل؟')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/attendance/${logId}/`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRFToken': this.getCSRFToken()
+                    }
+                });
+
+                if (response.ok) {
+                    this.showNotification('تم حذف السجل بنجاح', 'success');
+                    this.loadAttendanceLogs();
+                } else {
+                    this.showNotification('فشل في حذف السجل', 'error');
+                }
+            } catch (error) {
+                console.error('Error deleting log:', error);
+                this.showNotification('حدث خطأ في حذف السجل', 'error');
+            }
+        },
+
+        editLog(log) {
+            // TODO: Implement edit modal
+            console.log('Edit log:', log);
+        },
+
+        previousPage() {
+            if (this.pagination.currentPage > 1) {
+                this.pagination.currentPage--;
+                this.loadAttendanceLogs();
+            }
+        },
+
+        nextPage() {
+            if (this.pagination.currentPage < this.pagination.totalPages) {
+                this.pagination.currentPage++;
+                this.loadAttendanceLogs();
+            }
+        },
+
+        getStatusClass(status) {
+            const classes = {
+                'present': 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
+                'late': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
+                'absent': 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
+                'leave': 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400'
+            };
+            return classes[status] || classes['present'];
+        },
+
+        getStatusText(status) {
+            const texts = {
+                'present': 'حاضر',
+                'late': 'متأخر',
+                'absent': 'غائب',
+                'leave': 'إجازة'
+            };
+            return texts[status] || 'حاضر';
+        },
+
+        formatDate(date) {
+            return new Date(date).toLocaleDateString('ar-SA');
+        },
+
+        formatNumber(num) {
+            return num.toLocaleString('ar-SA');
         },
 
         getCSRFToken() {
             return document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+        },
+
+        showNotification(message, type = 'success') {
+            if (window.atlasApp) {
+                window.atlasApp.showNotification(message, type);
+            }
         }
     }));
 
@@ -365,37 +483,395 @@ document.addEventListener('alpine:init', () => {
         reports: [],
         loading: false,
         selectedReport: null,
-        reportData: null,
-
-        init() {
-            this.loadReports();
+        reportData: [],
+        departments: [],
+        filters: {
+            year: '2024',
+            month: '',
+            department: ''
         },
-
-        async loadReports() {
+        stats: {
+            totalAttendance: 0,
+            averageHours: 0,
+            overtimeHours: 0,
+            leaveDays: 0
+        },
+        init() {
+            this.loadDepartments();
+            this.loadStats();
+        },
+        async loadDepartments() {
             try {
-                const response = await fetch('/api/reports/');
+                const response = await fetch('/api/departments/');
                 if (response.ok) {
-                    this.reports = await response.json();
+                    this.departments = await response.json();
                 }
             } catch (error) {
-                console.error('Error loading reports:', error);
+                console.error('Error loading departments:', error);
             }
         },
-
-        async generateReport(reportType, params = {}) {
+        async loadStats() {
             try {
-                this.loading = true;
-                const queryParams = new URLSearchParams(params);
-                const response = await fetch(`/api/reports/${reportType}/?${queryParams}`);
-                
+                const response = await fetch('/api/reports/stats/');
+                if (response.ok) {
+                    this.stats = await response.json();
+                }
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        },
+        async generateReport() {
+            if (!this.selectedReport) {
+                this.showNotification('يرجى اختيار نوع التقرير', 'warning');
+                return;
+            }
+
+            this.loading = true;
+            try {
+                const params = new URLSearchParams({
+                    type: this.selectedReport,
+                    year: this.filters.year,
+                    month: this.filters.month,
+                    department: this.filters.department
+                });
+
+                const response = await fetch(`/api/reports/generate/?${params}`);
                 if (response.ok) {
                     this.reportData = await response.json();
-                    this.selectedReport = reportType;
+                    this.showNotification('تم إنشاء التقرير بنجاح', 'success');
+                } else {
+                    this.showNotification('حدث خطأ في إنشاء التقرير', 'error');
                 }
             } catch (error) {
                 console.error('Error generating report:', error);
+                this.showNotification('حدث خطأ في إنشاء التقرير', 'error');
             } finally {
                 this.loading = false;
+            }
+        },
+        showNotification(message, type = 'success') {
+            if (window.atlasApp) {
+                window.atlasApp.showNotification(message, type);
+            }
+        }
+    }));
+
+    // Settings manager component
+    Alpine.data('settingsManager', () => ({
+        activeTab: 'general',
+        loading: false,
+        settings: {
+            company: {
+                name: 'شركة مصافي الوسط',
+                address: 'الرياض، المملكة العربية السعودية',
+                phone: '+966-11-123-4567',
+                email: 'info@wasco.com.sa'
+            },
+            system: {
+                timezone: 'Asia/Riyadh',
+                language: 'ar',
+                dateFormat: 'DD/MM/YYYY',
+                darkMode: false
+            },
+            attendance: {
+                startTime: '08:00',
+                endTime: '16:00',
+                dailyHours: 8,
+                workDays: ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس'],
+                gracePeriod: 15,
+                maxOvertime: 4,
+                autoLogout: true,
+                lateAlerts: true
+            },
+            notifications: {
+                email: {
+                    dailyReport: true,
+                    lateAlerts: false,
+                    monthlyReport: true
+                },
+                sms: {
+                    lateAlerts: false,
+                    overtimeReminders: true
+                }
+            },
+            security: {
+                passwordMinLength: 8,
+                passwordRequireUppercase: true,
+                passwordRequireNumbers: true,
+                passwordRequireSymbols: false,
+                sessionTimeout: 30,
+                autoLogout: true,
+                preventMultipleLogins: false
+            },
+            integrations: {
+                fingertec: {
+                    ip: '192.168.1.100',
+                    port: 4370,
+                    username: 'admin',
+                    password: '',
+                    autoSync: true
+                },
+                backup: {
+                    path: '/backup/',
+                    retention: 7,
+                    autoBackup: true
+                }
+            }
+        },
+
+        init() {
+            this.loadSettings();
+        },
+
+        async loadSettings() {
+            this.loading = true;
+            try {
+                const response = await fetch('/api/settings/');
+                if (response.ok) {
+                    const data = await response.json();
+                    this.settings = { ...this.settings, ...data };
+                }
+            } catch (error) {
+                console.error('Error loading settings:', error);
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        async saveAllSettings() {
+            this.loading = true;
+            try {
+                const response = await fetch('/api/settings/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': this.getCSRFToken()
+                    },
+                    body: JSON.stringify(this.settings)
+                });
+
+                if (response.ok) {
+                    this.showNotification('تم حفظ الإعدادات بنجاح', 'success');
+                } else {
+                    this.showNotification('حدث خطأ في حفظ الإعدادات', 'error');
+                }
+            } catch (error) {
+                console.error('Error saving settings:', error);
+                this.showNotification('حدث خطأ في حفظ الإعدادات', 'error');
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        async testFingerTecConnection() {
+            this.loading = true;
+            try {
+                const response = await fetch('/api/integrations/fingertec/test/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': this.getCSRFToken()
+                    },
+                    body: JSON.stringify(this.settings.integrations.fingertec)
+                });
+
+                if (response.ok) {
+                    this.showNotification('تم الاتصال بالجهاز بنجاح', 'success');
+                } else {
+                    this.showNotification('فشل الاتصال بالجهاز', 'error');
+                }
+            } catch (error) {
+                console.error('Error testing connection:', error);
+                this.showNotification('حدث خطأ في اختبار الاتصال', 'error');
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        async createBackup() {
+            this.loading = true;
+            try {
+                const response = await fetch('/api/integrations/backup/create/', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': this.getCSRFToken()
+                    }
+                });
+
+                if (response.ok) {
+                    this.showNotification('تم إنشاء النسخة الاحتياطية بنجاح', 'success');
+                } else {
+                    this.showNotification('فشل في إنشاء النسخة الاحتياطية', 'error');
+                }
+            } catch (error) {
+                console.error('Error creating backup:', error);
+                this.showNotification('حدث خطأ في إنشاء النسخة الاحتياطية', 'error');
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        getCSRFToken() {
+            return document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+        },
+
+        showNotification(message, type = 'success') {
+            if (window.atlasApp) {
+                window.atlasApp.showNotification(message, type);
+            }
+        }
+    }));
+
+    // Department manager component
+    Alpine.data('departmentManager', () => ({
+        departments: [],
+        loading: false,
+        searchTerm: '',
+        showAddModal: false,
+        editingDepartment: {
+            name: '',
+            description: '',
+            manager: '',
+            is_active: true
+        },
+        stats: {
+            totalDepartments: 0,
+            totalEmployees: 0,
+            averageEmployees: 0
+        },
+
+        init() {
+            this.loadDepartments();
+            this.loadStats();
+        },
+
+        async loadDepartments() {
+            this.loading = true;
+            try {
+                const response = await fetch('/api/departments/');
+                if (response.ok) {
+                    this.departments = await response.json();
+                }
+            } catch (error) {
+                console.error('Error loading departments:', error);
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        async loadStats() {
+            try {
+                const response = await fetch('/api/departments/stats/');
+                if (response.ok) {
+                    this.stats = await response.json();
+                }
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        },
+
+        get filteredDepartments() {
+            if (!this.searchTerm) {
+                return this.departments;
+            }
+            return this.departments.filter(dept => 
+                dept.name.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+                (dept.description && dept.description.toLowerCase().includes(this.searchTerm.toLowerCase()))
+            );
+        },
+
+        openAddModal() {
+            this.editingDepartment = {
+                name: '',
+                description: '',
+                manager: '',
+                is_active: true
+            };
+            this.showAddModal = true;
+        },
+
+        openEditModal(department) {
+            this.editingDepartment = { ...department };
+            this.showAddModal = true;
+        },
+
+        async saveDepartment() {
+            try {
+                const url = this.editingDepartment.id 
+                    ? `/api/departments/${this.editingDepartment.id}/`
+                    : '/api/departments/';
+                
+                const method = this.editingDepartment.id ? 'PATCH' : 'POST';
+                
+                const response = await fetch(url, {
+                    method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': this.getCSRFToken()
+                    },
+                    body: JSON.stringify(this.editingDepartment)
+                });
+
+                if (response.ok) {
+                    this.showAddModal = false;
+                    this.loadDepartments();
+                    this.loadStats();
+                    this.showNotification('تم حفظ القسم بنجاح', 'success');
+                } else {
+                    this.showNotification('حدث خطأ في حفظ القسم', 'error');
+                }
+            } catch (error) {
+                console.error('Error saving department:', error);
+                this.showNotification('حدث خطأ في حفظ القسم', 'error');
+            }
+        },
+
+        async deleteDepartment(departmentId) {
+            if (!confirm('هل أنت متأكد من حذف هذا القسم؟')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/departments/${departmentId}/`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRFToken': this.getCSRFToken()
+                    }
+                });
+
+                if (response.ok) {
+                    this.loadDepartments();
+                    this.loadStats();
+                    this.showNotification('تم حذف القسم بنجاح', 'success');
+                } else {
+                    this.showNotification('فشل في حذف القسم', 'error');
+                }
+            } catch (error) {
+                console.error('Error deleting department:', error);
+                this.showNotification('حدث خطأ في حذف القسم', 'error');
+            }
+        },
+
+        viewEmployees(department) {
+            // TODO: Navigate to department employees page
+            console.log('View employees for department:', department);
+        },
+
+        formatDate(date) {
+            return new Date(date).toLocaleDateString('ar-SA');
+        },
+
+        formatNumber(num) {
+            return num.toLocaleString('ar-SA');
+        },
+
+        getCSRFToken() {
+            return document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+        },
+
+        showNotification(message, type = 'success') {
+            if (window.atlasApp) {
+                window.atlasApp.showNotification(message, type);
             }
         }
     }));

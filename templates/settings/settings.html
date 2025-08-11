@@ -1,0 +1,619 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}الإعدادات - Atlas{% endblock %}
+
+{% block content %}
+<div x-data="settingsManager" class="space-y-6">
+    
+    <!-- Header -->
+    <div class="glass-card p-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-gradient">الإعدادات</h1>
+                <p class="text-gray-600 dark:text-gray-300 mt-2">إدارة إعدادات النظام والصلاحيات</p>
+            </div>
+            <button @click="saveAllSettings()" class="btn-gradient-primary flex items-center space-x-2 space-x-reverse">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+                <span>حفظ الإعدادات</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Settings Tabs -->
+    <div class="glass-card p-6">
+        <div class="border-b border-white/20">
+            <nav class="flex space-x-8 space-x-reverse" aria-label="Tabs">
+                <button @click="activeTab = 'general'" 
+                        :class="activeTab === 'general' ? 'border-blue-500 text-blue-600 dark:text-blue-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'"
+                        class="whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors duration-200">
+                    <div class="flex items-center space-x-2 space-x-reverse">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        </svg>
+                        <span>عام</span>
+                    </div>
+                </button>
+                <button @click="activeTab = 'attendance'" 
+                        :class="activeTab === 'attendance' ? 'border-blue-500 text-blue-600 dark:text-blue-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'"
+                        class="whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors duration-200">
+                    <div class="flex items-center space-x-2 space-x-reverse">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <span>الحضور والانصراف</span>
+                    </div>
+                </button>
+                <button @click="activeTab = 'notifications'" 
+                        :class="activeTab === 'notifications' ? 'border-blue-500 text-blue-600 dark:text-blue-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'"
+                        class="whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors duration-200">
+                    <div class="flex items-center space-x-2 space-x-reverse">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-5 5v-5z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                        </svg>
+                        <span>الإشعارات</span>
+                    </div>
+                </button>
+                <button @click="activeTab = 'security'" 
+                        :class="activeTab === 'security' ? 'border-blue-500 text-blue-600 dark:text-blue-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'"
+                        class="whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors duration-200">
+                    <div class="flex items-center space-x-2 space-x-reverse">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                        </svg>
+                        <span>الأمان</span>
+                    </div>
+                </button>
+                <button @click="activeTab = 'integrations'" 
+                        :class="activeTab === 'integrations' ? 'border-blue-500 text-blue-600 dark:text-blue-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'"
+                        class="whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors duration-200">
+                    <div class="flex items-center space-x-2 space-x-reverse">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                        </svg>
+                        <span>التكاملات</span>
+                    </div>
+                </button>
+            </nav>
+        </div>
+
+        <!-- General Settings -->
+        <div x-show="activeTab === 'general'" class="mt-6 space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Company Information -->
+                <div class="space-y-4">
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-white">معلومات الشركة</h3>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">اسم الشركة</label>
+                        <input type="text" x-model="settings.company.name" class="modern-input" placeholder="شركة مصافي الوسط">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">العنوان</label>
+                        <input type="text" x-model="settings.company.address" class="modern-input" placeholder="الرياض، المملكة العربية السعودية">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">رقم الهاتف</label>
+                        <input type="tel" x-model="settings.company.phone" class="modern-input" placeholder="+966-11-123-4567">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">البريد الإلكتروني</label>
+                        <input type="email" x-model="settings.company.email" class="modern-input" placeholder="info@wasco.com.sa">
+                    </div>
+                </div>
+
+                <!-- System Settings -->
+                <div class="space-y-4">
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-white">إعدادات النظام</h3>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">المنطقة الزمنية</label>
+                        <select x-model="settings.system.timezone" class="modern-input">
+                            <option value="Asia/Riyadh">الرياض (GMT+3)</option>
+                            <option value="Asia/Dubai">دبي (GMT+4)</option>
+                            <option value="Asia/Kuwait">الكويت (GMT+3)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">اللغة الافتراضية</label>
+                        <select x-model="settings.system.language" class="modern-input">
+                            <option value="ar">العربية</option>
+                            <option value="en">English</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">تنسيق التاريخ</label>
+                        <select x-model="settings.system.dateFormat" class="modern-input">
+                            <option value="DD/MM/YYYY">DD/MM/YYYY</option>
+                            <option value="MM/DD/YYYY">MM/DD/YYYY</option>
+                            <option value="YYYY-MM-DD">YYYY-MM-DD</option>
+                        </select>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">الوضع المظلم</label>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">تفعيل المظهر المظلم افتراضياً</p>
+                        </div>
+                        <button @click="settings.system.darkMode = !settings.system.darkMode" 
+                                :class="settings.system.darkMode ? 'bg-blue-600' : 'bg-gray-200'"
+                                class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200">
+                            <span :class="settings.system.darkMode ? 'translate-x-6' : 'translate-x-1'" 
+                                  class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200"></span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Attendance Settings -->
+        <div x-show="activeTab === 'attendance'" class="mt-6 space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Work Schedule -->
+                <div class="space-y-4">
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-white">جدول العمل</h3>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">وقت بدء العمل</label>
+                        <input type="time" x-model="settings.attendance.startTime" class="modern-input" value="08:00">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">وقت انتهاء العمل</label>
+                        <input type="time" x-model="settings.attendance.endTime" class="modern-input" value="16:00">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">ساعات العمل اليومية</label>
+                        <input type="number" x-model="settings.attendance.dailyHours" class="modern-input" min="1" max="24" value="8">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">أيام العمل</label>
+                        <div class="space-y-2">
+                            <template x-for="day in ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت']" :key="day">
+                                <label class="flex items-center">
+                                    <input type="checkbox" :value="day" x-model="settings.attendance.workDays" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                    <span class="mr-2 text-sm text-gray-700 dark:text-gray-300" x-text="day"></span>
+                                </label>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Attendance Rules -->
+                <div class="space-y-4">
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-white">قواعد الحضور</h3>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">فترة السماح للتأخير (دقائق)</label>
+                        <input type="number" x-model="settings.attendance.gracePeriod" class="modern-input" min="0" max="60" value="15">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">الحد الأقصى للعمل الإضافي (ساعات)</label>
+                        <input type="number" x-model="settings.attendance.maxOvertime" class="modern-input" min="0" max="24" value="4">
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">تسجيل الخروج التلقائي</label>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">تسجيل خروج تلقائي في نهاية اليوم</p>
+                        </div>
+                        <button @click="settings.attendance.autoLogout = !settings.attendance.autoLogout" 
+                                :class="settings.attendance.autoLogout ? 'bg-blue-600' : 'bg-gray-200'"
+                                class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200">
+                            <span :class="settings.attendance.autoLogout ? 'translate-x-6' : 'translate-x-1'" 
+                                  class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200"></span>
+                        </button>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">تنبيهات التأخير</label>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">إرسال تنبيهات للموظفين المتأخرين</p>
+                        </div>
+                        <button @click="settings.attendance.lateAlerts = !settings.attendance.lateAlerts" 
+                                :class="settings.attendance.lateAlerts ? 'bg-blue-600' : 'bg-gray-200'"
+                                class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200">
+                            <span :class="settings.attendance.lateAlerts ? 'translate-x-6' : 'translate-x-1'" 
+                                  class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200"></span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notifications Settings -->
+        <div x-show="activeTab === 'notifications'" class="mt-6 space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Email Notifications -->
+                <div class="space-y-4">
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-white">إشعارات البريد الإلكتروني</h3>
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <label class="text-sm font-medium text-gray-700 dark:text-gray-300">تقرير الحضور اليومي</label>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">إرسال تقرير يومي للمدراء</p>
+                            </div>
+                            <button @click="settings.notifications.email.dailyReport = !settings.notifications.email.dailyReport" 
+                                    :class="settings.notifications.email.dailyReport ? 'bg-blue-600' : 'bg-gray-200'"
+                                    class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200">
+                                <span :class="settings.notifications.email.dailyReport ? 'translate-x-6' : 'translate-x-1'" 
+                                      class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200"></span>
+                            </button>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <label class="text-sm font-medium text-gray-700 dark:text-gray-300">تنبيهات التأخير</label>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">إشعارات للموظفين المتأخرين</p>
+                            </div>
+                            <button @click="settings.notifications.email.lateAlerts = !settings.notifications.email.lateAlerts" 
+                                    :class="settings.notifications.email.lateAlerts ? 'bg-blue-600' : 'bg-gray-200'"
+                                    class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200">
+                                <span :class="settings.notifications.email.lateAlerts ? 'translate-x-6' : 'translate-x-1'" 
+                                      class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200"></span>
+                            </button>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <label class="text-sm font-medium text-gray-700 dark:text-gray-300">تقرير شهري</label>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">تقرير شهري شامل</p>
+                            </div>
+                            <button @click="settings.notifications.email.monthlyReport = !settings.notifications.email.monthlyReport" 
+                                    :class="settings.notifications.email.monthlyReport ? 'bg-blue-600' : 'bg-gray-200'"
+                                    class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200">
+                                <span :class="settings.notifications.email.monthlyReport ? 'translate-x-6' : 'translate-x-1'" 
+                                      class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200"></span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SMS Notifications -->
+                <div class="space-y-4">
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-white">إشعارات الرسائل النصية</h3>
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <label class="text-sm font-medium text-gray-700 dark:text-gray-300">تنبيهات التأخير</label>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">رسائل نصية للموظفين المتأخرين</p>
+                            </div>
+                            <button @click="settings.notifications.sms.lateAlerts = !settings.notifications.sms.lateAlerts" 
+                                    :class="settings.notifications.sms.lateAlerts ? 'bg-blue-600' : 'bg-gray-200'"
+                                    class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200">
+                                <span :class="settings.notifications.sms.lateAlerts ? 'translate-x-6' : 'translate-x-1'" 
+                                      class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200"></span>
+                            </button>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <label class="text-sm font-medium text-gray-700 dark:text-gray-300">تذكيرات العمل الإضافي</label>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">تذكيرات بالموافقة على العمل الإضافي</p>
+                            </div>
+                            <button @click="settings.notifications.sms.overtimeReminders = !settings.notifications.sms.overtimeReminders" 
+                                    :class="settings.notifications.sms.overtimeReminders ? 'bg-blue-600' : 'bg-gray-200'"
+                                    class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200">
+                                <span :class="settings.notifications.sms.overtimeReminders ? 'translate-x-6' : 'translate-x-1'" 
+                                      class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200"></span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Security Settings -->
+        <div x-show="activeTab === 'security'" class="mt-6 space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Password Policy -->
+                <div class="space-y-4">
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-white">سياسة كلمات المرور</h3>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">الحد الأدنى لطول كلمة المرور</label>
+                        <input type="number" x-model="settings.security.passwordMinLength" class="modern-input" min="6" max="20" value="8">
+                    </div>
+                    <div class="space-y-2">
+                        <div class="flex items-center justify-between">
+                            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">تتطلب أحرف كبيرة</label>
+                            <button @click="settings.security.passwordRequireUppercase = !settings.security.passwordRequireUppercase" 
+                                    :class="settings.security.passwordRequireUppercase ? 'bg-blue-600' : 'bg-gray-200'"
+                                    class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200">
+                                <span :class="settings.security.passwordRequireUppercase ? 'translate-x-6' : 'translate-x-1'" 
+                                      class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200"></span>
+                            </button>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">تتطلب أرقام</label>
+                            <button @click="settings.security.passwordRequireNumbers = !settings.security.passwordRequireNumbers" 
+                                    :class="settings.security.passwordRequireNumbers ? 'bg-blue-600' : 'bg-gray-200'"
+                                    class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200">
+                                <span :class="settings.security.passwordRequireNumbers ? 'translate-x-6' : 'translate-x-1'" 
+                                      class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200"></span>
+                            </button>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">تتطلب رموز خاصة</label>
+                            <button @click="settings.security.passwordRequireSymbols = !settings.security.passwordRequireSymbols" 
+                                    :class="settings.security.passwordRequireSymbols ? 'bg-blue-600' : 'bg-gray-200'"
+                                    class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200">
+                                <span :class="settings.security.passwordRequireSymbols ? 'translate-x-6' : 'translate-x-1'" 
+                                      class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200"></span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Session Settings -->
+                <div class="space-y-4">
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-white">إعدادات الجلسة</h3>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">مدة انتهاء الجلسة (دقائق)</label>
+                        <input type="number" x-model="settings.security.sessionTimeout" class="modern-input" min="5" max="480" value="30">
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">تسجيل الخروج التلقائي</label>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">تسجيل خروج تلقائي عند عدم النشاط</p>
+                        </div>
+                        <button @click="settings.security.autoLogout = !settings.security.autoLogout" 
+                                :class="settings.security.autoLogout ? 'bg-blue-600' : 'bg-gray-200'"
+                                class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200">
+                            <span :class="settings.security.autoLogout ? 'translate-x-6' : 'translate-x-1'" 
+                                  class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200"></span>
+                        </button>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">تسجيل الدخول المزدوج</label>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">منع تسجيل الدخول من أكثر من جهاز</p>
+                        </div>
+                        <button @click="settings.security.preventMultipleLogins = !settings.security.preventMultipleLogins" 
+                                :class="settings.security.preventMultipleLogins ? 'bg-blue-600' : 'bg-gray-200'"
+                                class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200">
+                            <span :class="settings.security.preventMultipleLogins ? 'translate-x-6' : 'translate-x-1'" 
+                                  class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200"></span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Integrations Settings -->
+        <div x-show="activeTab === 'integrations'" class="mt-6 space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- FingerTec Integration -->
+                <div class="space-y-4">
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-white">تكامل جهاز البصمة</h3>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">عنوان IP للجهاز</label>
+                        <input type="text" x-model="settings.integrations.fingertec.ip" class="modern-input" placeholder="192.168.1.100">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">رقم المنفذ</label>
+                        <input type="number" x-model="settings.integrations.fingertec.port" class="modern-input" placeholder="4370" value="4370">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">اسم المستخدم</label>
+                        <input type="text" x-model="settings.integrations.fingertec.username" class="modern-input" placeholder="admin">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">كلمة المرور</label>
+                        <input type="password" x-model="settings.integrations.fingertec.password" class="modern-input" placeholder="••••••••">
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">المزامنة التلقائية</label>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">مزامنة البيانات كل 5 دقائق</p>
+                        </div>
+                        <button @click="settings.integrations.fingertec.autoSync = !settings.integrations.fingertec.autoSync" 
+                                :class="settings.integrations.fingertec.autoSync ? 'bg-blue-600' : 'bg-gray-200'"
+                                class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200">
+                            <span :class="settings.integrations.fingertec.autoSync ? 'translate-x-6' : 'translate-x-1'" 
+                                  class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200"></span>
+                        </button>
+                    </div>
+                    <button @click="testFingerTecConnection()" class="btn-gradient-secondary w-full">
+                        اختبار الاتصال
+                    </button>
+                </div>
+
+                <!-- Database Backup -->
+                <div class="space-y-4">
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-white">النسخ الاحتياطي</h3>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">مسار النسخ الاحتياطي</label>
+                        <input type="text" x-model="settings.integrations.backup.path" class="modern-input" placeholder="/backup/">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">عدد النسخ المحفوظة</label>
+                        <input type="number" x-model="settings.integrations.backup.retention" class="modern-input" min="1" max="30" value="7">
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <label class="text-sm font-medium text-gray-700 dark:text-gray-300">النسخ الاحتياطي التلقائي</label>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">نسخ احتياطي يومي في الساعة 2 صباحاً</p>
+                        </div>
+                        <button @click="settings.integrations.backup.autoBackup = !settings.integrations.backup.autoBackup" 
+                                :class="settings.integrations.backup.autoBackup ? 'bg-blue-600' : 'bg-gray-200'"
+                                class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200">
+                            <span :class="settings.integrations.backup.autoBackup ? 'translate-x-6' : 'translate-x-1'" 
+                                  class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200"></span>
+                        </button>
+                    </div>
+                    <button @click="createBackup()" class="btn-gradient-success w-full">
+                        إنشاء نسخة احتياطية الآن
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Settings manager component
+document.addEventListener('alpine:init', () => {
+    Alpine.data('settingsManager', () => ({
+        activeTab: 'general',
+        loading: false,
+        settings: {
+            company: {
+                name: 'شركة مصافي الوسط',
+                address: 'الرياض، المملكة العربية السعودية',
+                phone: '+966-11-123-4567',
+                email: 'info@wasco.com.sa'
+            },
+            system: {
+                timezone: 'Asia/Riyadh',
+                language: 'ar',
+                dateFormat: 'DD/MM/YYYY',
+                darkMode: false
+            },
+            attendance: {
+                startTime: '08:00',
+                endTime: '16:00',
+                dailyHours: 8,
+                workDays: ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس'],
+                gracePeriod: 15,
+                maxOvertime: 4,
+                autoLogout: true,
+                lateAlerts: true
+            },
+            notifications: {
+                email: {
+                    dailyReport: true,
+                    lateAlerts: false,
+                    monthlyReport: true
+                },
+                sms: {
+                    lateAlerts: false,
+                    overtimeReminders: true
+                }
+            },
+            security: {
+                passwordMinLength: 8,
+                passwordRequireUppercase: true,
+                passwordRequireNumbers: true,
+                passwordRequireSymbols: false,
+                sessionTimeout: 30,
+                autoLogout: true,
+                preventMultipleLogins: false
+            },
+            integrations: {
+                fingertec: {
+                    ip: '192.168.1.100',
+                    port: 4370,
+                    username: 'admin',
+                    password: '',
+                    autoSync: true
+                },
+                backup: {
+                    path: '/backup/',
+                    retention: 7,
+                    autoBackup: true
+                }
+            }
+        },
+
+        init() {
+            this.loadSettings();
+        },
+
+        async loadSettings() {
+            this.loading = true;
+            try {
+                // Load settings from API
+                const response = await fetch('/api/settings/');
+                if (response.ok) {
+                    const data = await response.json();
+                    this.settings = { ...this.settings, ...data };
+                }
+            } catch (error) {
+                console.error('Error loading settings:', error);
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        async saveAllSettings() {
+            this.loading = true;
+            try {
+                const response = await fetch('/api/settings/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': this.getCSRFToken()
+                    },
+                    body: JSON.stringify(this.settings)
+                });
+
+                if (response.ok) {
+                    this.showNotification('تم حفظ الإعدادات بنجاح', 'success');
+                } else {
+                    this.showNotification('حدث خطأ في حفظ الإعدادات', 'error');
+                }
+            } catch (error) {
+                console.error('Error saving settings:', error);
+                this.showNotification('حدث خطأ في حفظ الإعدادات', 'error');
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        async testFingerTecConnection() {
+            this.loading = true;
+            try {
+                const response = await fetch('/api/integrations/fingertec/test/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': this.getCSRFToken()
+                    },
+                    body: JSON.stringify(this.settings.integrations.fingertec)
+                });
+
+                if (response.ok) {
+                    this.showNotification('تم الاتصال بالجهاز بنجاح', 'success');
+                } else {
+                    this.showNotification('فشل الاتصال بالجهاز', 'error');
+                }
+            } catch (error) {
+                console.error('Error testing connection:', error);
+                this.showNotification('حدث خطأ في اختبار الاتصال', 'error');
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        async createBackup() {
+            this.loading = true;
+            try {
+                const response = await fetch('/api/integrations/backup/create/', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': this.getCSRFToken()
+                    }
+                });
+
+                if (response.ok) {
+                    this.showNotification('تم إنشاء النسخة الاحتياطية بنجاح', 'success');
+                } else {
+                    this.showNotification('فشل في إنشاء النسخة الاحتياطية', 'error');
+                }
+            } catch (error) {
+                console.error('Error creating backup:', error);
+                this.showNotification('حدث خطأ في إنشاء النسخة الاحتياطية', 'error');
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        getCSRFToken() {
+            return document.querySelector('[name=csrfmiddlewaretoken]').value;
+        },
+
+        showNotification(message, type = 'success') {
+            // Use the global notification system
+            if (window.atlasApp) {
+                window.atlasApp.showNotification(message, type);
+            }
+        }
+    }));
+});
+</script>
+{% endblock %}
