@@ -123,6 +123,75 @@ DATABASE_URL=postgresql+psycopg://atlas:atlas@localhost:5432/atlas pytest -m int
 DATABASE_URL=sqlite:///test.db pytest -m integration
 ```
 
+## اختبارات Docker
+
+### إعداد بيئة الاختبار
+
+```bash
+# إعداد بيئة الاختبار فقط
+make setup-test-env
+
+# أو باستخدام السكريبت مباشرة
+./scripts/run-tests.sh --setup
+```
+
+### تشغيل الاختبارات باستخدام Docker
+
+```bash
+# تشغيل جميع الاختبارات
+make test-docker
+
+# تشغيل اختبارات الوحدة فقط
+make test-docker-unit
+
+# تشغيل اختبارات التكامل فقط
+make test-docker-int
+
+# تشغيل اختبارات API
+make test-docker-api
+
+# تشغيل اختبارات المزامنة
+make test-docker-sync
+
+# تشغيل اختبارات رفع البيانات
+make test-docker-bulk
+
+# تشغيل الاختبارات مع تغطية
+make test-docker-cov
+```
+
+### أوامر Docker المتقدمة
+
+```bash
+# تشغيل اختبارات محددة
+./scripts/run-tests.sh tests/test_unit.py
+
+# تشغيل اختبارات مطابقة نمط معين
+./scripts/run-tests.sh -k 'test_employee'
+
+# تشغيل اختبارات مع تفاصيل أكثر
+./scripts/run-tests.sh -v
+
+# تشغيل اختبارات مع تغطية
+./scripts/run-tests.sh -c
+
+# إيقاف الحاويات بعد التشغيل
+./scripts/run-tests.sh -d
+
+# عرض المساعدة
+./scripts/run-tests.sh -h
+```
+
+### تنظيف بيئة الاختبار
+
+```bash
+# تنظيف ملفات الاختبار
+make clean
+
+# تنظيف حاويات Docker
+make clean-docker
+```
+
 ## هيكل المشروع
 
 ```
@@ -138,11 +207,18 @@ atlas/
 │   ├── test_unit.py           # اختبارات الوحدة
 │   ├── test_integration.py    # اختبارات التكامل
 │   ├── test_bulk_upload.py    # اختبارات رفع البيانات
-│   └── test_sync_integration.py # اختبارات المزامنة
+│   ├── test_sync_integration.py # اختبارات المزامنة
+│   └── test_docker_integration.py # اختبارات بيئة Docker
+├── scripts/
+│   └── run-tests.sh    # سكريبت تشغيل الاختبارات
 ├── requirements.txt    # متطلبات الإنتاج
 ├── requirements-dev.txt # متطلبات التطوير
 ├── pytest.ini         # إعدادات pytest
 ├── .flake8            # إعدادات flake8
+├── .coveragerc        # إعدادات تغطية الاختبارات
+├── docker-compose.test.yml # إعدادات Docker للاختبارات
+├── Dockerfile.test     # Dockerfile للاختبارات
+├── Makefile           # أوامر مفيدة
 └── docker-compose.yml # إعدادات Docker
 ```
 
@@ -220,6 +296,31 @@ class TestNewAPI:
     def test_new_endpoint(self):
         # اختبار النقطة النهائية الجديدة
         assert True
+```
+
+### أوامر Make المفيدة
+
+```bash
+# عرض جميع الأوامر المتاحة
+make help
+
+# تثبيت متطلبات التطوير
+make install-dev
+
+# تشغيل الاختبارات المحلية
+make test
+
+# تشغيل الاختبارات مع Docker
+make test-docker
+
+# تنظيف ملفات الاختبار
+make clean
+
+# فحص الكود
+make lint
+
+# فحص Django
+make check
 ```
 
 ### تشغيل الاختبارات في CI/CD

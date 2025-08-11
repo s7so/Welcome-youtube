@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  test-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: atlas_test
+      POSTGRES_USER: atlas_test
+      POSTGRES_PASSWORD: atlas_test
+    ports:
+      - "5433:5432"  # Different port to avoid conflicts
+    volumes:
+      - test_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U atlas_test -d atlas_test"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  test-redis:
+    image: redis:7-alpine
+    ports:
+      - "6380:6379"  # Different port to avoid conflicts
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  test-runner:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    environment:
+      - DATABASE_URL=postgresql+psycopg://atlas_test:atlas_test@test-db:5432/atlas_test
+      - REDIS_URL=redis://test-redis:6379/0
+      - DJANGO_DEBUG=true
+      - DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1
+      - PYTHONPATH=/app
+    volumes:
+      - .:/app
+      - test_venv:/app/.venv
+    depends_on:
+      test-db:
+        condition: service_healthy
+      test-redis:
+        condition: service_healthy
+    command: ["tail", "-f", "/dev/null"]  # Keep container running
+
+volumes:
+  test_postgres_data:
+  test_venv:
