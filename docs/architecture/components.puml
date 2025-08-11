@@ -1,0 +1,24 @@
+@startuml
+!include <C4/C4_Container>
+
+LAYOUT_LEFT_RIGHT()
+
+Person_Ext(User, "Internal User")
+System_Boundary(Atlas, "Project Atlas") {
+  Container(Web, "Web/API", "Django + DRF", "CRUD, Reports")
+  Container(Worker, "Worker", "Celery", "Sync attendance job")
+  ContainerDb(DB, "PostgreSQL", "Relational DB", "Employees, Departments, AttendanceLogs")
+  Container(Redis, "Redis", "Broker/Cache", "Celery broker, cache")
+  Container(Integration, "FingerTec Adapter", "Python SDK/DB", "Connects to device/Ingress DB")
+}
+Person_Ext(FingerTec, "FingerTec Device/Ingress")
+
+Rel(User, Web, "HTTP(S)")
+Rel(Worker, Integration, "SDK/DB")
+Rel(Worker, DB, "SQL writes")
+Rel(Web, DB, "SQL reads/writes")
+Rel(Worker, Redis, "Broker")
+Rel(Web, Redis, "Cache (optional)")
+Rel(Integration, FingerTec, "TCP/IP or DB connection")
+
+@enduml

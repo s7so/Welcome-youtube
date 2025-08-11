@@ -1,0 +1,63 @@
+version: "3.9"
+services:
+  postgres:
+    image: postgres:16
+    container_name: atlas_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: atlas
+      POSTGRES_USER: atlas
+      POSTGRES_PASSWORD: atlas
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U atlas -d atlas"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7
+    container_name: atlas_redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  web:
+    image: python:3.12-slim
+    container_name: atlas_web
+    restart: unless-stopped
+    working_dir: /app
+    env_file: ["../.env.example"]
+    volumes:
+      - ..:/app
+    command: bash -lc "pip install -r requirements.txt && gunicorn atlas.asgi:application -k uvicorn.workers.UvicornWorker -b 0.0.0.0:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+
+  worker:
+    image: python:3.12-slim
+    container_name: atlas_worker
+    restart: unless-stopped
+    working_dir: /app
+    env_file: ["../.env.example"]
+    volumes:
+      - ..:/app
+    command: bash -lc "pip install -r requirements.txt && celery -A atlas worker -l info"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+volumes:
+  pg_data:

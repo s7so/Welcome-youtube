@@ -1,0 +1,25 @@
+@startuml
+!include <C4/C4_Context>
+
+LAYOUT_LEFT_RIGHT()
+
+Person(hr, "HR User", "يدير بيانات الموظفين والتقارير")
+Person(mgr, "Department Manager", "يستعرض تقارير القسم")
+System_Boundary(atlas, "Project Atlas") {
+  System(web, "Atlas Web/API", "Django + DRF")
+  System_Ext(worker, "Atlas Worker", "Celery")
+  SystemDb(db, "PostgreSQL", "Operational data")
+  System_Ext(redis, "Redis", "Broker/Cache")
+}
+System_Ext(fingertec, "FingerTec Device/Ingress DB", "مصدر سجلات الحضور")
+System_Ext(ldap, "LDAP/AD", "مصادقة (لاحقاً)")
+
+Rel(hr, web, "Uses over HTTPS (Intranet)")
+Rel(mgr, web, "Uses over HTTPS (Intranet)")
+Rel(worker, fingertec, "Fetch logs", "SDK/DB read‑only")
+Rel(worker, db, "Write attendance logs", "SQL")
+Rel(web, db, "CRUD, reports", "SQL")
+Rel(worker, redis, "Broker")
+Rel(web, ldap, "Authenticate", "LDAP (optional)")
+
+@enduml
