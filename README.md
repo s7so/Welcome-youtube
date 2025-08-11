@@ -11,9 +11,14 @@
 - وثيقة Phase‑0: `docs/phase-0.md`
 - وثيقة Phase‑1: `docs/phase-1.md`
 - وثيقة Phase‑2: `docs/phase-2.md`
+- وثيقة Phase‑3: `docs/phase-3.md`
 - سجل القرارات الهندسية (ADR): `docs/adr/0001-choose-architecture.md`
 - قالب مفاضلة RICE: `docs/templates/rice-template.csv`
 - سجل المخاطر: `docs/risk-register.csv`
 
+مخططات التدفق والربط:
+- مخطط المزامنة (US-03): `docs/flowcharts/us-03-sync-attendance.puml` → `docs/flowcharts/us-03-sync-attendance.svg`
+- التتبع إلى شبه‑شيفرة: `docs/traceability/flow-to-pseudocode.md`
+
 الخطوة التالية المقترحة:
-- اعتماد قرار المعمارية (Web داخل الشبكة باستخدام Python/Django) والانطلاق إلى Phase‑1 (Discovery and Architecture Blueprint).
+- الانتقال إلى Phase‑4 (Architecture & Tech Stack) باعتماد Django/DRF وPostgreSQL ووضع التصميم الطبقي للتكامل مع FingerTec.

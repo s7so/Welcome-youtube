@@ -1,0 +1,40 @@
+@startuml
+title "Flowchart: Sync Attendance Data"
+
+start
+:Acquire Lock for sync job;
+if (Lock Acquired?) then (Yes)
+  :Get Last Sync Timestamp from DB;
+  :Connect to FingerTec Device;
+  if (Connection Successful?) then (Yes)
+    :Fetch New Logs since last timestamp;
+    if (New Logs Found?) then (Yes)
+      while (More logs to process?)
+        :Parse Log Data;
+        :Find Employee in local DB;
+        if (Employee Exists?) then (Yes)
+          :Check for Duplicate Log;
+          if (Is Duplicate?) then (No)
+            :Save Log to DB (in transaction);
+          else (Yes)
+            :Log "Skipping duplicate";
+          endif
+        else (No)
+          :Log "Unknown Employee ID";
+        endif
+      endwhile
+      :Update Last Sync Timestamp;
+      :Commit Transaction;
+    else (No)
+      :Log "No new logs found";
+    endif
+  else (No)
+    :Log "Device Connection Failed";
+    :Send Alert to Admin;
+  endif
+  :Release Lock;
+else (No)
+  :Log "Skipping, previous job active";
+endif
+stop
+@enduml
