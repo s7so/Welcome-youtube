@@ -35,7 +35,7 @@ services:
     env_file: ["../.env.example"]
     volumes:
       - ..:/app
-    command: bash -lc "pip install -r requirements.txt && gunicorn atlas.asgi:application -k uvicorn.workers.UvicornWorker -b 0.0.0.0:8000"
+    command: bash -lc "pip install -r requirements.txt && python manage.py migrate && gunicorn atlas.asgi:application -k uvicorn.workers.UvicornWorker -b 0.0.0.0:8000"
     depends_on:
       postgres:
         condition: service_healthy
@@ -53,6 +53,21 @@ services:
     volumes:
       - ..:/app
     command: bash -lc "pip install -r requirements.txt && celery -A atlas worker -l info"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  beat:
+    image: python:3.12-slim
+    container_name: atlas_beat
+    restart: unless-stopped
+    working_dir: /app
+    env_file: ["../.env.example"]
+    volumes:
+      - ..:/app
+    command: bash -lc "pip install -r requirements.txt && python manage.py migrate django_celery_beat && celery -A atlas beat -l info"
     depends_on:
       postgres:
         condition: service_healthy

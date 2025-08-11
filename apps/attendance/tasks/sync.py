@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 
 from django.conf import settings
 from django.db import connection, transaction
+from celery import shared_task
 
 from apps.attendance.models import AttendanceLog, SyncState
 from apps.employees.models import Employee
@@ -15,6 +16,11 @@ from apps.integrations.fingertec.adapters import (
 from apps.platform.alerting.alerter import send_critical
 
 logger = logging.getLogger(__name__)
+
+
+@shared_task(name="attendance.run_sync_job")
+def run_sync_job_task() -> None:
+    run_sync_job()
 
 
 @contextmanager
