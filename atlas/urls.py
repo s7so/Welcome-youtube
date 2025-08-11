@@ -5,6 +5,7 @@ from rest_framework.routers import DefaultRouter
 
 from apps.employees.api.views import EmployeeViewSet
 from apps.attendance.api.views import AttendanceLogViewSet
+from apps.reports.api.views import MonthlyReportView
 
 
 def healthz(_request):
@@ -19,4 +20,5 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("_healthz", healthz),
     path("api/", include(router.urls)),
+    path("api/reports/monthly", MonthlyReportView.as_view()),
 ]

@@ -1,0 +1,73 @@
+from datetime import datetime
+from typing import Any, Dict, List
+
+from django.db.models import Min, Max, Count, Q
+from django.utils.dateparse import parse_datetime
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from apps.attendance.models import AttendanceLog
+from apps.employees.models import Employee
+from .serializers import MonthlyReportResponseSerializer
+
+
+class MonthlyReportView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        department_id = request.query_params.get("department")
+        start_param = request.query_params.get("start")
+        end_param = request.query_params.get("end")
+
+        if not start_param or not end_param:
+            return Response({"detail": "start and end are required ISO datetimes"}, status=400)
+
+        start = parse_datetime(start_param)
+        end = parse_datetime(end_param)
+        if not start or not end or start > end:
+            return Response({"detail": "invalid start/end"}, status=400)
+
+        logs = AttendanceLog.objects.select_related("employee", "employee__department").filter(
+            check_time__gte=start, check_time__lte=end
+        )
+        if department_id:
+            logs = logs.filter(employee__department_id=department_id)
+
+        # Aggregate per employee
+        agg = logs.values(
+            "employee_id",
+            "employee__employee_id",
+            "employee__full_name",
+            "employee__department__name",
+        ).annotate(
+            total_logs=Count("id"),
+            first_seen=Min("check_time"),
+            last_seen=Max("check_time"),
+            first_check_in=Min("check_time", filter=Q(log_type="IN")),
+            last_check_out=Max("check_time", filter=Q(log_type="OUT")),
+        ).order_by("employee__full_name")
+
+        results: List[Dict[str, Any]] = []
+        for row in agg:
+            results.append({
+                "employee_id": row["employee_id"],
+                "employee_identifier": row["employee__employee_id"],
+                "full_name": row["employee__full_name"],
+                "department_name": row["employee__department__name"],
+                "total_logs": row["total_logs"],
+                "first_check_in": row["first_check_in"],
+                "last_check_out": row["last_check_out"],
+                "first_seen": row["first_seen"],
+                "last_seen": row["last_seen"],
+            })
+
+        payload = {
+            "department": department_id,
+            "start": start,
+            "end": end,
+            "count": len(results),
+            "results": results,
+        }
+        serializer = MonthlyReportResponseSerializer(payload)
+        return Response(serializer.data)
